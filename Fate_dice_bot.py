@@ -2,7 +2,7 @@ import random
 from telegram import Update
 from telegram.ext import Updater, CommandHandler, CallbackContext
 
-# ==== Толкования ====
+# ==== Толкования ====+
 SUM_INTERPRETATION = {
     2: "❌ Невозможно. Не время, не ты, не судьба.",
     3: "🕯️ Тень шанса. Очень маленький проблеск.",
