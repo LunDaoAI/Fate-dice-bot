@@ -80,4 +80,25 @@ async def ask(update: Update, context: ContextTypes.DEFAULT_TYPE):
         message += f"\n\n🔄 **Это пара!** {interpretation['pair_interpretation']}"
 
     energy_meaning = {
-        "a > b": "🔸 Ты ведёшь ситу
+        "a > b": "🔸 Ты ведёшь ситуацию. Можешь влиять.",
+        "a < b": "🔸 Ситуация ведёт тебя. Нужно прислушаться к обстоятельствам.",
+        "a = b": "🔸 Гармония между тобой и миром."
+    }
+
+    message += f"\n\n⚡ **Энергия:** {energy_meaning[interpretation['energy']]}"
+    message += "\n\n🌌 **Толкование Оракула:**\n"
+    message += ">" + interpretation['sum_interpretation']
+
+    await update.message.reply_text(message)
+
+# ==== Запуск бота ====
+def main():
+    application = Application.builder().token("YOUR_BOT_TOKEN_HERE").build()
+
+    application.add_handler(CommandHandler("ask", ask))
+
+    print("🚀 Бот запущен...")
+    application.run_polling()
+
+if __name__ == '__main__':
+    main()
