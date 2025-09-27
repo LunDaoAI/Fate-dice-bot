@@ -159,7 +159,7 @@ def error_handler(update: Update, context: CallbackContext):
 def main():
     """Основная функция запуска бота"""
     # ЗАМЕНИТЕ 'YOUR_BOT_TOKEN_HERE' НА РЕАЛЬНЫЙ ТОКЕН БОТА
-    updater = Updater("YOUR_BOT_TOKEN_HERE", use_context=True)
+    updater = Updater(7963571696:AAFEkKbe_V4eVf9TPhnaW4yQOijX-hI6tYk, use_context=True)
     dp = updater.dispatcher
 
     # Добавляем обработчики команд
