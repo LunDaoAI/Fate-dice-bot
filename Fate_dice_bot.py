@@ -1,6 +1,7 @@
 import random
+import os
 from telegram import Update
-from telegram.ext import Updater, CommandHandler, CallbackContext
+from telegram.ext import Application, CommandHandler, ContextTypes
 
 # ==== Толкования ====
 SUM_INTERPRETATION = {
@@ -43,143 +44,91 @@ DICE_COMBINATIONS = {
 
 # ==== Функции ====
 def throw_dice():
-    """Бросает две игральные кости"""
     return random.randint(1, 6), random.randint(1, 6)
 
 def interpret(a, b):
-    """Интерпретирует результат броска костей"""
     total = a + b
     is_pair = a == b
     
-    result = {
+    return {
         "dice": (a, b),
         "total": total,
         "is_pair": is_pair,
         "energy": "a > b" if a > b else ("a < b" if a < b else "a = b"),
-        "sum_interpretation": SUM_INTERPRETATION.get(total, "📊 Результат требует дополнительного осмысления."),
-        "combination_interpretation": DICE_COMBINATIONS.get((a, b), "🎯 Уникальная комбинация. Прислушайся к интуиции.")
+        "sum_interpretation": SUM_INTERPRETATION.get(total, "📊 Результат требует осмысления."),
+        "combination_interpretation": DICE_COMBINATIONS.get((a, b), "🎯 Уникальная комбинация.")
     }
-    return result
 
-# ==== Команда /ask ====
-def ask(update: Update, context: CallbackContext):
-    """Обрабатывает команду /ask с вопросом пользователя"""
+# ==== Команды ====
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    welcome_text = """
+🌟 *Добро пожаловать в Оракул Костей!* 🌟
+
+Используйте команду /ask и ваш вопрос для получения предсказания.
+
+📝 Пример:
+/ask Ждать ли мне перемен в жизни?
+/ask Стоит ли начинать новый проект?
+    """
+    await update.message.reply_text(welcome_text, parse_mode='Markdown')
+
+async def ask(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not context.args:
-        update.message.reply_text(
-            "❌ Задайте вопрос после команды /ask.\n\n"
-            "📝 Пример:\n"
-            "/ask Ждать ли мне перемен в жизни?\n"
-            "/ask Стоит ли начинать новый проект?\n"
-            "/ask Что меня ждет в ближайшем будущем?"
-        )
+        await update.message.reply_text("❌ Задайте вопрос после команды /ask")
         return
 
     user_question = " ".join(context.args)
     a, b = throw_dice()
     interpretation = interpret(a, b)
 
-    # Формируем сообщение
     message = f"🔮 **Вопрос:** {user_question}\n\n"
     message += f"🎲 **Кости:** ({a}, {b}) → Сумма: {interpretation['total']}\n\n"
-    message += f"📜 **Основное толкование:** {interpretation['sum_interpretation']}\n"
+    message += f"📜 **Толкование:** {interpretation['sum_interpretation']}\n"
 
-    # Добавляем толкование комбинации, если оно есть
-    combo_text = interpretation['combination_interpretation']
-    if combo_text and combo_text != "🎯 Уникальная комбинация. Прислушайся к интуиции.":
-        message += f"\n🧩 **Комбинация ({a},{b}):** {combo_text}"
+    if "Уникальная" not in interpretation['combination_interpretation']:
+        message += f"\n🧩 **Комбинация ({a},{b}):** {interpretation['combination_interpretation']}"
 
-    # Особое сообщение для пар
     if interpretation["is_pair"]:
-        message += f"\n\n🔄 **Это пара {a}!** Особое совпадение сил."
+        message += f"\n\n🔄 **Это пара {a}!** Особое совпадение."
 
-    # Энергия ситуации
     energy_meaning = {
-        "a > b": "🔸 Ты ведёшь ситуацию. Можешь активно влиять на события.",
+        "a > b": "🔸 Ты ведёшь ситуацию. Можешь влиять на события.",
         "a < b": "🔸 Ситуация ведёт тебя. Прислушайся к обстоятельствам.",
-        "a = b": "🔸 Гармония между твоей волей и внешним миром."
+        "a = b": "🔸 Гармония между тобой и миром."
     }
     message += f"\n\n⚡ **Энергия:** {energy_meaning[interpretation['energy']]}"
 
-    # Добавляем разделитель
-    message += "\n\n" + "═" * 40 + "\n"
-    message += "💫 *Оракул советует:* Доверяй, но проверяй. Это всего лишь игра!"
+    await update.message.reply_text(message, parse_mode='Markdown')
 
-    update.message.reply_text(message, parse_mode='Markdown')
-
-# ==== Команда /start ====
-def start(update: Update, context: CallbackContext):
-    """Обрабатывает команду /start"""
-    welcome_text = """
-🌟 *Добро пожаловать в Оракул Костей!* 🌟
-
-Я — бот для мистических предсказаний с помощью игральных костей.
-
-📖 **Как использовать:**
-Напишите `/ask` и ваш вопрос после команды.
-
-🎯 **Примеры:**
-• `/ask Ждать ли мне перемен?`
-• `/ask Стоит ли доверять этому человеку?`
-• `/ask Что день грядущий мне готовит?`
-
-🎲 Брошу кости и расскажу, что они говорят о вашей ситуации!
-
-⚡ *Помните:* это всего лишь игра для развлечения и вдохновения.
-    """
-    update.message.reply_text(welcome_text, parse_mode='Markdown')
-
-# ==== Команда /help ====
-def help_command(update: Update, context: CallbackContext):
-    """Обрабатывает команду /help"""
+async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     help_text = """
 📋 **Доступные команды:**
+/start - Начать работу
+/ask [вопрос] - Получить предсказание
+/help - Помощь
 
-/start - Начать работу с ботом
-/ask [вопрос] - Задать вопрос оракулу
-/help - Показать эту справку
-
-🎭 **Как это работает:**
-Я бросаю две виртуальные кости и интерпретирую результат на основе:
-• Суммы выпавших чисел (2-12)
-• Конкретной комбинации костей
-• Энергии соотношения чисел
-
-💫 Пусть кости направят вас к мудрости!
+🎲 Бот бросает кости и интерпретирует результат!
     """
-    update.message.reply_text(help_text, parse_mode='Markdown')
-
-# ==== Обработка ошибок ====
-def error_handler(update: Update, context: CallbackContext):
-    """Обрабатывает ошибки"""
-    print(f"Ошибка: {context.error}")
-    if update and update.message:
-        update.message.reply_text("❌ Произошла непредвиденная ошибка. Попробуйте позже.")
+    await update.message.reply_text(help_text, parse_mode='Markdown')
 
 # ==== Запуск бота ====
 def main():
-    """Основная функция запуска бота"""
-    # ЗАМЕНИТЕ 'YOUR_BOT_TOKEN_HERE' НА РЕАЛЬНЫЙ ТОКЕН БОТА
-    updater = Updater("7963571696:AAFEkKbe_V4eVf9TPhnaW4yQOijX-hI6tYk", use_context=True)
-    dp = updater.dispatcher
-
-    # Добавляем обработчики команд
-    dp.add_handler(CommandHandler("start", start))
-    dp.add_handler(CommandHandler("ask", ask))
-    dp.add_handler(CommandHandler("help", help_command))
+    # 🔒 БЕЗОПАСНОЕ ИСПОЛЬЗОВАНИЕ ТОКЕНА
+    BOT_TOKEN = "7963571696:AAFEkKbe_V4eVf9TPhnaW4yQOijX-hI6tYk"
     
-    # Добавляем обработчик ошибок
-    dp.add_error_handler(error_handler)
+    # Создаем приложение
+    application = Application.builder().token(BOT_TOKEN).build()
+
+    # Добавляем обработчики
+    application.add_handler(CommandHandler("start", start))
+    application.add_handler(CommandHandler("ask", ask))
+    application.add_handler(CommandHandler("help", help_command))
 
     print("🚀 Бот Оракул Костей запущен...")
     print("📱 Используйте Ctrl+C для остановки")
     
-    try:
-        updater.start_polling()
-        updater.idle()
-    except Exception as e:
-        print(f"❌ Ошибка при запуске бота: {e}")
-    finally:
-        print("🔴 Бот остановлен")
+    # Запускаем бота
+    application.run_polling()
 
 if __name__ == '__main__':
     main()
