@@ -1,7 +1,6 @@
 import random
-import os
 from telegram import Update
-from telegram.ext import Application, CommandHandler, ContextTypes
+from telegram.ext import Updater, CommandHandler, CallbackContext
 
 # ==== Толкования ====
 SUM_INTERPRETATION = {
@@ -42,7 +41,6 @@ DICE_COMBINATIONS = {
     (6, 6): "Высшая удача. Все звёзды сошлись.",
 }
 
-# ==== Функции ====
 def throw_dice():
     return random.randint(1, 6), random.randint(1, 6)
 
@@ -59,10 +57,9 @@ def interpret(a, b):
         "combination_interpretation": DICE_COMBINATIONS.get((a, b), "🎯 Уникальная комбинация.")
     }
 
-# ==== Команды ====
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+def start(update: Update, context: CallbackContext):
     welcome_text = """
-🌟 *Добро пожаловать в Оракул Костей!* 🌟
+🌟 Добро пожаловать в Оракул Костей! 🌟
 
 Используйте команду /ask и ваш вопрос для получения предсказания.
 
@@ -70,65 +67,60 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 /ask Ждать ли мне перемен в жизни?
 /ask Стоит ли начинать новый проект?
     """
-    await update.message.reply_text(welcome_text, parse_mode='Markdown')
+    update.message.reply_text(welcome_text)
 
-async def ask(update: Update, context: ContextTypes.DEFAULT_TYPE):
+def ask(update: Update, context: CallbackContext):
     if not context.args:
-        await update.message.reply_text("❌ Задайте вопрос после команды /ask")
+        update.message.reply_text("❌ Задайте вопрос после команды /ask")
         return
 
     user_question = " ".join(context.args)
     a, b = throw_dice()
     interpretation = interpret(a, b)
 
-    message = f"🔮 **Вопрос:** {user_question}\n\n"
-    message += f"🎲 **Кости:** ({a}, {b}) → Сумма: {interpretation['total']}\n\n"
-    message += f"📜 **Толкование:** {interpretation['sum_interpretation']}\n"
+    message = f"🔮 Вопрос: {user_question}\n\n"
+    message += f"🎲 Кости: ({a}, {b}) → Сумма: {interpretation['total']}\n\n"
+    message += f"📜 Толкование: {interpretation['sum_interpretation']}\n"
 
     if "Уникальная" not in interpretation['combination_interpretation']:
-        message += f"\n🧩 **Комбинация ({a},{b}):** {interpretation['combination_interpretation']}"
+        message += f"\n🧩 Комбинация ({a},{b}): {interpretation['combination_interpretation']}"
 
     if interpretation["is_pair"]:
-        message += f"\n\n🔄 **Это пара {a}!** Особое совпадение."
+        message += f"\n\n🔄 Это пара {a}! Особое совпадение."
 
     energy_meaning = {
         "a > b": "🔸 Ты ведёшь ситуацию. Можешь влиять на события.",
         "a < b": "🔸 Ситуация ведёт тебя. Прислушайся к обстоятельствам.",
         "a = b": "🔸 Гармония между тобой и миром."
     }
-    message += f"\n\n⚡ **Энергия:** {energy_meaning[interpretation['energy']]}"
+    message += f"\n\n⚡ Энергия: {energy_meaning[interpretation['energy']]}"
 
-    await update.message.reply_text(message, parse_mode='Markdown')
+    update.message.reply_text(message)
 
-async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+def help_command(update: Update, context: CallbackContext):
     help_text = """
-📋 **Доступные команды:**
+📋 Доступные команды:
 /start - Начать работу
 /ask [вопрос] - Получить предсказание
 /help - Помощь
 
 🎲 Бот бросает кости и интерпретирует результат!
     """
-    await update.message.reply_text(help_text, parse_mode='Markdown')
+    update.message.reply_text(help_text)
 
-# ==== Запуск бота ====
 def main():
-    # 🔒 БЕЗОПАСНОЕ ИСПОЛЬЗОВАНИЕ ТОКЕНА
     BOT_TOKEN = "7963571696:AAFEkKbe_V4eVf9TPhnaW4yQOijX-hI6tYk"
     
-    # Создаем приложение
-    application = Application.builder().token(BOT_TOKEN).build()
+    updater = Updater(BOT_TOKEN, use_context=True)
+    dp = updater.dispatcher
 
-    # Добавляем обработчики
-    application.add_handler(CommandHandler("start", start))
-    application.add_handler(CommandHandler("ask", ask))
-    application.add_handler(CommandHandler("help", help_command))
+    dp.add_handler(CommandHandler("start", start))
+    dp.add_handler(CommandHandler("ask", ask))
+    dp.add_handler(CommandHandler("help", help_command))
 
     print("🚀 Бот Оракул Костей запущен...")
-    print("📱 Используйте Ctrl+C для остановки")
-    
-    # Запускаем бота
-    application.run_polling()
+    updater.start_polling()
+    updater.idle()
 
 if __name__ == '__main__':
     main()
