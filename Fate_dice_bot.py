@@ -1,6 +1,6 @@
 import random
 from telegram import Update
-from telegram.ext import Application, CommandHandler, ContextTypes
+from telegram.ext import Updater, CommandHandler, CallbackContext
 
 # ==== Толкования ====
 SUM_INTERPRETATION = {
@@ -63,7 +63,7 @@ def interpret(a, b):
     return result
 
 # ==== Команда /ask ====
-async def ask(update: Update, context: ContextTypes.DEFAULT_TYPE):
+def ask(update: Update, context: CallbackContext):
     user_question = " ".join(context.args) if context.args else "Не задан."
 
     a, b = throw_dice()
@@ -89,16 +89,18 @@ async def ask(update: Update, context: ContextTypes.DEFAULT_TYPE):
     message += "\n\n🌌 **Толкование Оракула:**\n"
     message += ">" + interpretation['sum_interpretation']
 
-    await update.message.reply_text(message)
+    update.message.reply_text(message)
 
 # ==== Запуск бота ====
 def main():
-    application = Application.builder().token("YOUR_BOT_TOKEN_HERE").build()
+    updater = Updater("YOUR_BOT_TOKEN_HERE", use_context=True)
+    dp = updater.dispatcher
 
-    application.add_handler(CommandHandler("ask", ask))
+    dp.add_handler(CommandHandler("ask", ask))
 
     print("🚀 Бот запущен...")
-    application.run_polling()
+    updater.start_polling()
+    updater.idle()
 
 if __name__ == '__main__':
     main()
