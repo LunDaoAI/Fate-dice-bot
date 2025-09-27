@@ -1,4 +1,5 @@
 import random
+import os
 from telegram import Update
 from telegram.ext import Updater, CommandHandler, CallbackContext
 
@@ -119,7 +120,12 @@ def main():
     dp.add_handler(CommandHandler("help", help_command))
 
     print("🚀 Бот Оракул Костей запущен...")
+    
+    # ==== ДЛЯ RENDER.COM ====
+    # Используем polling вместо webhook для простоты
+    # Webhook требует HTTPS домена и сложной настройки
     updater.start_polling()
+    print("🤖 Бот начал прослушивание сообщений...")
     updater.idle()
 
 if __name__ == '__main__':
