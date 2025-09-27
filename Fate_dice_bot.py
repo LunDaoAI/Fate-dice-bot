@@ -1,8 +1,8 @@
 import random
 from telegram import Update
-from telegram.ext import Updater, CommandHandler, CallbackContext
+from telegram.ext import Application, CommandHandler, ContextTypes
 
-# ==== Толкования ====+
+# ==== Толкования ====
 SUM_INTERPRETATION = {
     2: "❌ Невозможно. Не время, не ты, не судьба.",
     3: "🕯️ Тень шанса. Очень маленький проблеск.",
@@ -10,7 +10,7 @@ SUM_INTERPRETATION = {
     5: "🌀 Непредсказуемость. Перемены в движении.",
     6: "🌫️ Возможность есть, но скрыта. Требуется интуиция.",
     7: "💫 Получится, но не так, как ты думаешь.",
-    8: "🔮 Высокая вероятность успеха. Действуй!",
+    8: "🔮 Высокая вертятность успеха. Действуй!",
     9: "🌟 Да, если действовать умно и вовремя.",
     10: "🏆 Успех почти гарантирован. Победа близка.",
     11: "🌈 Чудо или неожиданный поворот. Благоприятный знак.",
@@ -63,7 +63,7 @@ def interpret(a, b):
     return result
 
 # ==== Команда /ask ====
-def ask(update: Update, context: CallbackContext):
+async def ask(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_question = " ".join(context.args) if context.args else "Не задан."
 
     a, b = throw_dice()
@@ -80,27 +80,4 @@ def ask(update: Update, context: CallbackContext):
         message += f"\n\n🔄 **Это пара!** {interpretation['pair_interpretation']}"
 
     energy_meaning = {
-        "a > b": "🔸 Ты ведёшь ситуацию. Можешь влиять.",
-        "a < b": "🔸 Ситуация ведёт тебя. Нужно прислушаться к обстоятельствам.",
-        "a = b": "🔸 Гармония между тобой и миром."
-    }
-
-    message += f"\n\n⚡ **Энергия:** {energy_meaning[interpretation['energy']]}"
-    message += "\n\n🌌 **Толкование Оракула:**\n"
-    message += ">" + interpretation['sum_interpretation']
-
-    update.message.reply_text(message)
-
-# ==== Запуск бота ====
-def main():
-    updater = Updater("YOUR_BOT_TOKEN_HERE", use_context=True)
-    dp = updater.dispatcher
-
-    dp.add_handler(CommandHandler("ask", ask))
-
-    print("🚀 Бот запущен...")
-    updater.start_polling()
-    updater.idle()
-
-if __name__ == '__main__':
-    main()
+        "a > b": "🔸 Ты ведёшь ситу
