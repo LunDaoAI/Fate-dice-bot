@@ -3,6 +3,18 @@ import os
 from telegram import Update
 from telegram.ext import Updater, CommandHandler, CallbackContext
 
+# ==== Функция авто-пробуждения ====
+def keep_alive():
+    """Периодически отправляет запросы чтобы бот не засыпал"""
+    while True:
+        try:
+            # Пингуем разные сервисы для надежности
+            requests.get('https://www.google.com', timeout=10)
+            print(f"🔄 Keep-alive ping sent at {time.strftime('%Y-%m-%d %H:%M:%S')}")
+        except Exception as e:
+            print(f"⚠️ Keep-alive error: {e}")
+        time.sleep(300)  # Каждые 5 минут
+
 # ==== Толкования ====
 SUM_INTERPRETATION = {
     2: "❌ Невозможно. Не время, не ты, не судьба.",
